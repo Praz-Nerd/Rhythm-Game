@@ -2,7 +2,7 @@ window.onload = function () {
     console.log('Game started')
     //define constants
     let RADIUS = 120 / 2
-    let SPEED = 15
+    let SPEED = 20
     //define variables
     let canvas = document.getElementById("game-canvas")
     let context = canvas.getContext("2d")
@@ -97,7 +97,7 @@ window.onload = function () {
 
     function generateCircle() {
         colors = ['yellow', 'green', 'blue', 'orange']
-        generateFlag = Math.floor(Math.random() * 11) + 15
+        generateFlag = Math.floor(Math.random() * 21) + 25
         let x = width + RADIUS
         let row = Math.floor(Math.random() * 4)
         return { x: x, row: row, color: colors[row] }
