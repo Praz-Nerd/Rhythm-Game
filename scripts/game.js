@@ -68,6 +68,7 @@ window.onload = function () {
         context.textAlign = 'center'
         context.strokeStyle = 'black'
         context.fillStyle = 'black'
+        context.lineWidth = 1
         //draw gridlines
         context.beginPath()
         for (let i = 1; i <= 3; i++) {

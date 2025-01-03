@@ -1,3 +1,12 @@
-canvas{
+#game-canvas {
     border: 1px solid black;
+    display: block;
+    margin: auto;
+}
+.score-panel {
+    font-size: 1.5rem;
+    text-align: center;
+}
+.menu-button {
+    margin: 5px;
 }
