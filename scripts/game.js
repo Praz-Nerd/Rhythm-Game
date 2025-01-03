@@ -2,7 +2,7 @@ window.onload = function () {
     console.log('Game started')
     //define constants
     let RADIUS = 120 / 2
-    let SPEED = 20
+    let SPEED = 30
     //define variables
     let canvas = document.getElementById("game-canvas")
     let context = canvas.getContext("2d")
