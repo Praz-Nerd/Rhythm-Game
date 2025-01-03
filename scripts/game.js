@@ -1,21 +1,71 @@
 window.onload = function () {
     console.log('Game started')
     //define constants
+    let DEFAULT_SCORE = 120
     let RADIUS = 120 / 2
-    let SPEED = 21
+    let SPEED = 20
+    let GENERATE_FLAG_RANDOM = 21
+    let GENERATE_FLAG_MIN = 25
     //define variables
+    let startButton = document.getElementById("start-btn")
+    let easyButton = document.getElementById("easy-btn")
+    let mediumButton = document.getElementById("medium-btn")
+    let hardButton = document.getElementById("hard-btn")
+    let scoreDisplay = document.getElementById("score-display")
+    let healthDisplay = document.getElementById("health-display")
     let canvas = document.getElementById("game-canvas")
     let context = canvas.getContext("2d")
     let width = canvas.width
     let height = canvas.height
+    let health = 5
+    let score = 0
+    let combo = 0
+    let comboMultiplier = 1
+
+    //DIFFICULTY SETTINGS
+    mediumButton.addEventListener("click", function(){
+        SPEED = 20
+        GENERATE_FLAG_RANDOM = 21
+        GENERATE_FLAG_MIN = 25
+    })
+
+    easyButton.addEventListener("click", function(){
+        SPEED = 10
+        GENERATE_FLAG_RANDOM = 21
+        GENERATE_FLAG_MIN = 25
+    })
+
+    hardButton.addEventListener("click", function(){
+        SPEED = 30
+        GENERATE_FLAG_RANDOM = 6
+        GENERATE_FLAG_MIN = 11
+    })
 
     //{x:, row:, color:}
     let generateFlag = 0
     let circles = []
     circles.push(generateCircle())
     let animations = []
-    //game loop
-    let interval = setInterval(function () {
+
+    //GAME LOOP
+    let interval = null
+    //start button behaviour
+    startButton.addEventListener("click", function(){
+        health = 5
+        score = 0
+        combo = 0
+        comboMultiplier = 1
+        scoreDisplay.innerHTML = score
+        healthDisplay.innerHTML = health
+        circles = []
+        circles.push(generateCircle())
+        context.clearRect(0, 0, width, height)
+
+        if(interval != null) clearInterval(interval)
+        interval = setInterval(gameLoop, 33)
+    })
+
+    function gameLoop(){
         context.clearRect(0, 0, width, height)
         drawGrid()
         generateFlag--
@@ -27,11 +77,22 @@ window.onload = function () {
             circles[i].x -= SPEED
             drawCircle(circles[i])
         }
+        //checks if circle leaves the screen
         for (let i = 0; i < circles.length; i++) {
-            if (circles[i].x < 0) circles.splice(i, 1)
+            if (circles[i].x < 0){
+                circles.splice(i, 1)
+                healthDisplay.innerHTML = --health
+                combo = 0
+                comboMultiplier = 1
+            } 
+        }
+        if(health <= 0){
+            clearInterval(interval)
+            alert("Game over...\nScore: " + score)
         }
         drawAnimations()
-    }, 33)
+    }
+
     //w, a, s, d
     let circleFillFLags = [0, 0, 0, 0]
     //change fill colors and check collisions
@@ -105,7 +166,7 @@ window.onload = function () {
 
     function generateCircle() {
         colors = ['red', 'green', 'blue', 'orange']
-        generateFlag = Math.floor(Math.random() * 21) + 25
+        generateFlag = Math.floor(Math.random() * GENERATE_FLAG_RANDOM) + GENERATE_FLAG_MIN
         let x = width + RADIUS
         let row = Math.floor(Math.random() * 4)
         return { x: x, row: row, color: colors[row] }
@@ -118,7 +179,13 @@ window.onload = function () {
             let targetY = height / 8 + (height / 4 * rowIndex)
             let dist = Math.abs(circle.x - targetX)
             if (circle.row === rowIndex && dist <= RADIUS+10) {
-                console.log("hit: "+rowIndex);
+                //update score
+                combo++
+                if(combo%5 == 0) comboMultiplier++
+                score += (DEFAULT_SCORE-dist)*comboMultiplier
+                scoreDisplay.innerHTML = score
+
+                console.log("hit: "+dist);
                 circles.splice(i, 1)
                 animations.push({ x: targetX, y: targetY, radius: RADIUS, frame: 10 })
                 break
