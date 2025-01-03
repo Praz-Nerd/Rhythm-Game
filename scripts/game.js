@@ -3,7 +3,7 @@ window.onload = function () {
     //define constants
     let DEFAULT_SCORE = 120
     let RADIUS = 120 / 2
-    let SPEED = 30
+    let SPEED = 20
     let GENERATE_FLAG_RANDOM = 21
     let GENERATE_FLAG_MIN = 25
     //define variables
