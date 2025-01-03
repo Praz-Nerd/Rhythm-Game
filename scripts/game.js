@@ -13,6 +13,7 @@ window.onload = function () {
     let generateFlag = 0
     let circles = []
     circles.push(generateCircle())
+    let animations = []
     //game loop
     let interval = setInterval(function () {
         context.clearRect(0, 0, width, height)
@@ -29,26 +30,32 @@ window.onload = function () {
         for (let i = 0; i < circles.length; i++) {
             if (circles[i].x < 0) circles.splice(i, 1)
         }
+        drawAnimations()
     }, 33)
     //w, a, s, d
     let circleFillFLags = [0, 0, 0, 0]
     //change fill colors and check collisions
     document.addEventListener('keydown', function (e) {
+        let rowIndex = -1
         switch (e.key) {
             case 'w':
-                circleFillFLags[0] = 5
+                rowIndex = 0
                 break
             case 'a':
-                circleFillFLags[1] = 5
+                rowIndex = 1
                 break
             case 's':
-                circleFillFLags[2] = 5
+                rowIndex = 2
                 break
             case 'd':
-                circleFillFLags[3] = 5
+                rowIndex = 3
                 break
             default:
                 break
+        }
+        if (rowIndex !== -1) {
+            circleFillFLags[rowIndex] = 5
+            checkCollision(rowIndex)
         }
     })
 
@@ -76,7 +83,7 @@ window.onload = function () {
             context.arc(x, y, 130 / 2, 0, 2 * Math.PI)
             context.stroke()
             if(circleFillFLags[i] > 0){
-                context.fillStyle = 'red'
+                context.fillStyle = 'silver'
                 context.fill()
                 circleFillFLags[i]--
                 context.fillStyle = 'black'
@@ -96,11 +103,40 @@ window.onload = function () {
     }
 
     function generateCircle() {
-        colors = ['yellow', 'green', 'blue', 'orange']
+        colors = ['red', 'green', 'blue', 'orange']
         generateFlag = Math.floor(Math.random() * 21) + 25
         let x = width + RADIUS
         let row = Math.floor(Math.random() * 4)
         return { x: x, row: row, color: colors[row] }
+    }
+
+    function checkCollision(rowIndex){
+        for (let i = 0; i < circles.length; i++) {
+            let circle = circles[i]
+            let targetX = height / 8
+            let targetY = height / 8 + (height / 4 * rowIndex)
+            let dist = Math.abs(circle.x - targetX)
+            if (circle.row === rowIndex && dist <= RADIUS+10) {
+                console.log("hit: "+rowIndex);
+                circles.splice(i, 1)
+                animations.push({ x: targetX, y: targetY, radius: RADIUS, frame: 10 })
+                break
+            }
+        }
+    }
+
+    function drawAnimations() {
+        for (let i = animations.length - 1; i >= 0; i--) {
+            let anim = animations[i]
+            context.beginPath()
+            context.arc(anim.x, anim.y, anim.radius, 0, 2 * Math.PI)
+            context.strokeStyle = 'aqua'
+            context.lineWidth = 3
+            context.stroke()
+            anim.radius += 2
+            anim.frame--
+            if (anim.frame <= 0) animations.splice(i, 1)
+        }
     }
 }
 
