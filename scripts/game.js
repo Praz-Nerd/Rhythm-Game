@@ -6,6 +6,7 @@ window.onload = function () {
     let SPEED = 20
     let GENERATE_FLAG_RANDOM = 21
     let GENERATE_FLAG_MIN = 25
+    let GRADES = ["D", "C", "B", "A", "S"]
     //define variables
     let startButton = document.getElementById("start-btn")
     let easyButton = document.getElementById("easy-btn")
@@ -13,6 +14,7 @@ window.onload = function () {
     let hardButton = document.getElementById("hard-btn")
     let scoreDisplay = document.getElementById("score-display")
     let healthDisplay = document.getElementById("health-display")
+    let gradeDisplay = document.getElementById("grade-display")
     let canvas = document.getElementById("game-canvas")
     let context = canvas.getContext("2d")
     let width = canvas.width
@@ -21,9 +23,11 @@ window.onload = function () {
     let score = 0
     let combo = 0
     let comboMultiplier = 1
+    let currentGrade = 0
 
      // Sound setup
-     let song = new Audio('sounds/song1.mp3');
+     let song = new Audio('sounds/song2.mp3');
+     let clickSound = new Audio('sounds/click1.wav')
      let failureSound = new Audio('sounds/failure.mp3');
  
      let songSegment = 0; // Keeps track of song progress (in seconds)
@@ -32,31 +36,25 @@ window.onload = function () {
      let songLimit = 40;
 
     //DIFFICULTY SETTINGS
-    mediumButton.addEventListener("click", function(){
-        SPEED = 20
-        GENERATE_FLAG_RANDOM = 21
-        GENERATE_FLAG_MIN = 25
-        songLimit = 30
-        song = new Audio('sounds/song2.mp3')
+    function changeDifficulty(speed, flagRandom, flagMin, sngLimit, sng){
+        SPEED = speed
+        GENERATE_FLAG_RANDOM = flagRandom
+        GENERATE_FLAG_MIN = flagMin
+        songLimit = sngLimit
+        song = sng
         if(interval != null) clearInterval(interval)
-    })
+    }
 
     easyButton.addEventListener("click", function(){
-        SPEED = 10
-        GENERATE_FLAG_RANDOM = 21
-        GENERATE_FLAG_MIN = 25
-        songLimit = 40
-        song = new Audio('sounds/song1.mp3')
-        if(interval != null) clearInterval(interval)
+        changeDifficulty(10, 21, 25, 40, new Audio('sounds/song1.mp3'))
+    })
+
+    mediumButton.addEventListener("click", function(){
+        changeDifficulty(20, 21, 25, 30, new Audio('sounds/song2.mp3'))
     })
 
     hardButton.addEventListener("click", function(){
-        SPEED = 30
-        GENERATE_FLAG_RANDOM = 6
-        GENERATE_FLAG_MIN = 11
-        songLimit = 26
-        song = new Audio('sounds/song3.mp3')
-        if(interval != null) clearInterval(interval)
+        changeDifficulty(30, 6, 11, 26, new Audio('sounds/song3.mp3'))
     })
 
     // Play song segment
@@ -85,6 +83,11 @@ window.onload = function () {
         songPlaying = false;
     }
 
+    function playSound(sound){
+        sound.currentTime = 0
+        sound.play()
+    }
+
     //{x:, row:, color:}
     let generateFlag = 0
     let circles = []
@@ -95,12 +98,15 @@ window.onload = function () {
     let interval = null
     //start button behaviour
     startButton.addEventListener("click", function(){
+        //reset screen info
         health = 5
         score = 0
         combo = 0
         comboMultiplier = 1
+        currentGrade = 0
         scoreDisplay.innerHTML = score
         healthDisplay.innerHTML = health
+        gradeDisplay.innerHTML = GRADES[currentGrade]
         circles = []
         circles.push(generateCircle())
         context.clearRect(0, 0, width, height)
@@ -127,11 +133,12 @@ window.onload = function () {
             if (circles[i].x < 0){
                 circles.splice(i, 1)
                 healthDisplay.innerHTML = --health
+                if(currentGrade > 0) gradeDisplay.innerHTML = GRADES[--currentGrade]
                 combo = 0
                 comboMultiplier = 1
                 stopSong()
-                failureSound.currentTime = 0
-                failureSound.play()
+                
+                playSound(failureSound)
             } 
         }
         if(health <= 0){
@@ -140,7 +147,8 @@ window.onload = function () {
         }
         if(songSegment >= songLimit){
             clearInterval(interval)
-            alert("Congratulations! You have completed the game!\nScore: " + score)
+            alert("Congratulations! You have completed the game!\nScore: " + score + 
+                "\nYour grade is " + GRADES[currentGrade])
         }
         if(songPlaying){
             songSegment += 0.033
@@ -235,24 +243,29 @@ window.onload = function () {
             let targetY = height / 8 + (height / 4 * rowIndex)
             let dist = Math.abs(circle.x - targetX)
             if (circle.row === rowIndex && dist <= RADIUS+10) {
-                //update score
+                //update score and grade
                 combo++
                 if(combo%5 == 0) comboMultiplier++
+                if(combo%8 == 0) currentGrade++
                 score += (DEFAULT_SCORE-dist)*comboMultiplier
                 scoreDisplay.innerHTML = score
-
+                gradeDisplay.innerHTML = GRADES[currentGrade]
+                //play animation
                 circles.splice(i, 1)
-                animations.push({ x: targetX, y: targetY, radius: RADIUS, frame: 10 })
-
+                animations.push({ x: targetX, y: targetY, radius: RADIUS, frame: 10, dist: dist })
+                //play click sound
+                playSound(clickSound)
+                //play more of the song
                 playSongSegment()
                 return true
             }
         }
+        //bad collision
         combo = 0
         comboMultiplier = 1
         stopSong()
-        failureSound.currentTime = 0
-        failureSound.play()
+        
+        playSound(failureSound)
         return false
     }
 
@@ -261,7 +274,11 @@ window.onload = function () {
             let anim = animations[i]
             context.beginPath()
             context.arc(anim.x, anim.y, anim.radius, 0, 2 * Math.PI)
-            context.strokeStyle = 'aqua'
+            //change animation color based on distance
+            if(anim.dist >= 0 && anim.dist < 15)context.strokeStyle = 'aqua'
+            else if(anim.dist >= 15 && anim.dist < 30) context.strokeStyle = 'green'
+            else context.strokeStyle = 'yellow'
+
             context.lineWidth = 3
             context.stroke()
             anim.radius += 2
