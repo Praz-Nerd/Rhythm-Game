@@ -22,24 +22,68 @@ window.onload = function () {
     let combo = 0
     let comboMultiplier = 1
 
+     // Sound setup
+     let song = new Audio('sounds/song1.mp3');
+     let failureSound = new Audio('sounds/failure.mp3');
+ 
+     let songSegment = 0; // Keeps track of song progress (in seconds)
+     let songPlaying = false;
+     let songPlaybackTimeout = null;
+     let songLimit = 40;
+
     //DIFFICULTY SETTINGS
     mediumButton.addEventListener("click", function(){
         SPEED = 20
         GENERATE_FLAG_RANDOM = 21
         GENERATE_FLAG_MIN = 25
+        songLimit = 30
+        song = new Audio('sounds/song2.mp3')
+        if(interval != null) clearInterval(interval)
     })
 
     easyButton.addEventListener("click", function(){
         SPEED = 10
         GENERATE_FLAG_RANDOM = 21
         GENERATE_FLAG_MIN = 25
+        songLimit = 40
+        song = new Audio('sounds/song1.mp3')
+        if(interval != null) clearInterval(interval)
     })
 
     hardButton.addEventListener("click", function(){
         SPEED = 30
         GENERATE_FLAG_RANDOM = 6
         GENERATE_FLAG_MIN = 11
+        songLimit = 26
+        song = new Audio('sounds/song3.mp3')
+        if(interval != null) clearInterval(interval)
     })
+
+    // Play song segment
+    function playSongSegment() {
+        if (!songPlaying) {
+            song.play(); // Continue from current position
+            songPlaying = true;
+        }
+
+        if (songPlaybackTimeout) {
+            clearTimeout(songPlaybackTimeout);
+        }
+
+        songPlaybackTimeout = setTimeout(() => {
+            song.pause();
+            songPlaying = false;
+        }, 2000);
+    }
+    
+    // Function to stop the song immediately on a miss
+    function stopSong() {
+        if (songPlaybackTimeout) {
+            clearTimeout(songPlaybackTimeout); // Clear the timeout
+        }
+        song.pause(); // Pause the song, allowing resumption later
+        songPlaying = false;
+    }
 
     //{x:, row:, color:}
     let generateFlag = 0
@@ -60,6 +104,7 @@ window.onload = function () {
         circles = []
         circles.push(generateCircle())
         context.clearRect(0, 0, width, height)
+        songSegment = 0
 
         if(interval != null) clearInterval(interval)
         interval = setInterval(gameLoop, 33)
@@ -84,11 +129,22 @@ window.onload = function () {
                 healthDisplay.innerHTML = --health
                 combo = 0
                 comboMultiplier = 1
+                stopSong()
+                failureSound.currentTime = 0
+                failureSound.play()
             } 
         }
         if(health <= 0){
             clearInterval(interval)
             alert("Game over...\nScore: " + score)
+        }
+        if(songSegment >= songLimit){
+            clearInterval(interval)
+            alert("Congratulations! You have completed the game!\nScore: " + score)
+        }
+        if(songPlaying){
+            songSegment += 0.033
+            console.log(songSegment)
         }
         drawAnimations()
     }
@@ -185,12 +241,19 @@ window.onload = function () {
                 score += (DEFAULT_SCORE-dist)*comboMultiplier
                 scoreDisplay.innerHTML = score
 
-                console.log("hit: "+dist);
                 circles.splice(i, 1)
                 animations.push({ x: targetX, y: targetY, radius: RADIUS, frame: 10 })
-                break
+
+                playSongSegment()
+                return true
             }
         }
+        combo = 0
+        comboMultiplier = 1
+        stopSong()
+        failureSound.currentTime = 0
+        failureSound.play()
+        return false
     }
 
     function drawAnimations() {
